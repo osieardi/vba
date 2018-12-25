@@ -1,0 +1,42 @@
+Public Sub DownloadGoogleSheets()
+
+Dim ShtUrl, Location, FileName As String
+Dim objWebCon, objWrit As Object
+
+'Url
+ShtUrl = "https://docs.google.com/spreadsheets/d/1w0GbOlnopf01qT113b4UWKyUGVsBuhiiwEZG19Hhj1A/export?format=csv&id=1w0GbOlnopf01qT113b4UWKyUGVsBuhiiwEZG19Hhj1A&gid=0"  'Need to replace id and gid
+
+'Location
+Location = ActiveWorkbook.Path & "\"
+
+'FileName
+FileName = "GoogleSheet.csv"
+
+'Connection to Website
+Set objWebCon = CreateObject("MSXML2.XMLHTTP.3.0")
+
+'Writer
+Set objWrit = CreateObject("ADODB.Stream")
+
+'Connecting to the Website
+objWebCon.Open "Get", ShtUrl, False
+objWebCon.Send (ShtUrl)
+
+'Once page is fully loaded
+If objWebCon.Status = 200 Then
+
+'Write the text of the sheet
+Kill Location & FileName
+objWrit.Open
+objWrit.Type = 1
+objWrit.Write objWebCon.ResponseBody
+objWrit.Position = 0
+objWrit.SaveToFile Location & FileName
+objWrit.Close
+
+End If
+
+Set objWebCon = Nothing
+Set objWrit = Nothing
+
+End Sub
