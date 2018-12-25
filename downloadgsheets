@@ -1,4 +1,4 @@
-Public Sub DownloadGoogleSheets()
+Public Sub DownloadGSheets()
 
 Dim ShtUrl, Location, FileName As String
 Dim objWebCon, objWrit As Object
@@ -10,7 +10,7 @@ ShtUrl = "https://docs.google.com/spreadsheets/d/1w0GbOlnopf01qT113b4UWKyUGVsBuh
 Location = ActiveWorkbook.Path & "\"
 
 'FileName
-FileName = "GoogleSheet.csv"
+FileName = "GSheet.csv"
 
 'Connection to Website
 Set objWebCon = CreateObject("MSXML2.XMLHTTP.3.0")
