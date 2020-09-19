@@ -1,0 +1,93 @@
+Public Sub importoms()
+
+Dim file, filepath As String, fd As FileDialog
+Dim data(), OMSList, dict As Object, r As Long, shMaster, shOMS As Worksheet
+Dim OMSBook As Workbook
+Dim Header, OMSData, OMSHeader, Key As Variant
+Dim i, J As Integer
+Dim lastCol, sel As Long
+Dim arrHeader(0 To 4) As String
+Dim Head As Scripting.Dictionary
+
+Application.ScreenUpdating = False
+Application.DisplayAlerts = False
+Application.EnableEvents = False
+
+ThisWorkbook.Save
+Set dict = CreateObject("Scripting.Dictionary")
+Set shMaster = ThisWorkbook.Worksheets("Master")
+
+With shMaster.ListObjects("Table1")
+    If Not .DataBodyRange Is Nothing Then
+        .DataBodyRange.Delete
+    End If
+End With
+
+Set fd = Application.FileDialog(msoFileDialogFilePicker)
+
+With fd
+    .InitialFileName = ActiveWorkbook.Path
+    .Filters.Clear
+    .Filters.Add "Excel files", "*.xls*"
+    .AllowMultiSelect = False
+
+
+    If .Show Then
+        filepath = .SelectedItems(1)
+        file = Split(.SelectedItems(1), "\")
+        file = file(UBound(file))
+        If file = ActiveWorkbook.Name Then
+            MsgBox "Tidak dapat membuka file yang sedang menjalankan program."
+            Exit Sub
+        End If
+    Else
+        Exit Sub
+    End If
+End With
+
+Set OMSBook = Workbooks.Open(filepath)
+
+Set shOMS = OMSBook.Worksheets(1)
+shOMS.ListObjects.Add(xlSrcRange, Range([A1].End(xlDown), [A1].End(xlToRight)), , xlYes).Name = "OMSTable"
+Set OMSList = CreateObject("Scripting.Dictionary")
+
+With shOMS.ListObjects("OMSTable")
+    OMSData = .DataBodyRange.SpecialCells(xlCellTypeVisible).Value
+    OMSHeader = .HeaderRowRange.Value
+    lastCol = .Range.Columns.Count
+End With
+
+Set Head = New Scripting.Dictionary
+    Head("Seller") = 1
+    Head("Order") = 14
+    Head("Sku") = 15
+    Head("Uid") = 16
+    Head("Return") = 17
+    Head("Time") = 18
+
+For Each Key In Head.Keys
+    For i = 1 To lastCol
+        If Split(OMSHeader(1, i), " ")(0) = Key Then
+            shOMS.ListObjects("OMSTable").ListColumns(i).DataBodyRange.Copy
+            ThisWorkbook.Worksheets("Master").Cells(2, Head(Key)).PasteSpecial xlPasteValues
+        End If
+   Next i
+Next Key
+
+Application.CutCopyMode = False
+OMSBook.Close savechanges:=False
+
+Set Head = Nothing
+Set Header = Nothing
+Set OMSList = Nothing
+Set shOMS = Nothing
+Set OMSBook = Nothing
+Set fd = Nothing
+Set dict = Nothing
+Set shMaster = Nothing
+
+Application.EnableEvents = True
+Application.ScreenUpdating = True
+Application.DisplayAlerts = True
+
+End Sub

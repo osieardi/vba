@@ -1,0 +1,82 @@
+Sub RunMerge()
+    Dim wd As Object, wdocSource As Object
+    Dim sh As Worksheet
+    Dim Lrow As Long, i As Long
+    Dim cdir As String, client As String, newname As String
+    Dim sSQL As String
+    Const wdFormLetters = 0, wdOpenFormatAuto = 0
+    Const wdSendToNewDocument = 0, wdDefaultFirstRecord = 1, wdDefaultLastRecord = -16
+
+    cdir = ThisWorkbook.Path & "\"
+
+    On Error Resume Next
+    Set wd = GetObject(, "Word.Application")
+    If wd Is Nothing Then
+        Set wd = CreateObject("Word.Application")
+    End If
+    On Error GoTo 0
+
+    Set wdocSource = wd.Documents.Open(cdir & "Template Letter SK Zalora.docx")
+    Set sh = ActiveSheet
+    strWorkbookName = ThisWorkbook.Path & "\" & ThisWorkbook.Name
+    ThisWorkbook.RefreshAll
+
+    With sh
+        Lrow = .Range("B" & .Rows.Count).End(xlUp).Row
+        c = 0
+        d = 0
+        k = 0
+        j = 0
+
+        For i = 5 To Lrow
+            If Len(Trim(.Range("B" & i).Value)) <> 0 And .Range("C" & i).Value = "" Then
+                client = .Cells(i, 2).Value
+                newname = "SK - " & client & ".docx"
+                cdirfile = cdir & newname
+                    If Len(Dir(cdirfile)) > 0 Then
+                    c = c + 1
+                    k = k + 1
+                    Else
+                        wdocSource.MailMerge.MainDocumentType = wdFormLetters
+
+                        '~~> Sample String
+                        sSQL = "SELECT * FROM `Source$` WHERE [AJU-Short] = '" & .Range("B" & i).Value & "'"
+
+                        wdocSource.MailMerge.OpenDataSource Name:=strWorkbookName, _
+                        AddToRecentFiles:=False, Revert:=False, Format:=wdOpenFormatAuto, _
+                        Connection:="Data Source=" & strWorkbookName & ";Mode=Read", _
+                        SQLStatement:=sSQL
+
+                        With wdocSource.MailMerge
+                            .Destination = wdSendToNewDocument
+                            .SuppressBlankLines = True
+                        With .DataSource
+                            .FirstRecord = wdDefaultFirstRecord
+                            .LastRecord = wdDefaultLastRecord
+                        End With
+                            .Execute Pause:=False
+                        End With
+
+                        wd.ActiveDocument.SaveAs cdir & newname
+                        wd.ActiveDocument.Close SaveChanges:=False
+                        .Range("C" & i).Value = Format(Now(), "yyyy-MM-dd hh:mm:ss")
+                        d = d + 1
+                        k = k + 1
+                    End If
+            ElseIf Len(Trim(.Range("B" & i).Value)) <> 0 And .Range("C" & i).Value <> "" Then
+            j = j + 1
+            k = k + 1
+            Else
+            k = k + 1
+            End If
+        Next i
+    End With
+
+    wdocSource.Close SaveChanges:=False
+    wd.Quit
+
+    Set wdocSource = Nothing
+    Set wd = Nothing
+
+MsgBox ("Total Line : " & k & vbNewLine & "Tidak Proses : " & j & vbNewLine & "Berhasil Proses : " & d & vbNewLine & "Gagal Proses (file exist) : " & c)
+End Sub

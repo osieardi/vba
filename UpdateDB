@@ -1,0 +1,61 @@
+Public Sub UpdateDB()
+
+Application.ScreenUpdating = False
+Application.DisplayAlerts = False
+Application.EnableEvents = False
+Application.AskToUpdateLinks = False
+
+Set wk = ThisWorkbook.Worksheets("Data Seller")
+
+sellerDB = Application.ActiveWorkbook.Path & "\" & "sellerdb.csv"
+
+Dim myURL As String
+myURL = "https://docs.google.com/spreadsheets/d/1z1K8KYf1G9SMKr0keGOVLNzR5HXn_8BxfQhLTO6vVu0/export?format=csv&id=1z1K8KYf1G9SMKr0keGOVLNzR5HXn_8BxfQhLTO6vVu0&gid=0"
+
+Dim HttpReq As Object
+Set HttpReq = CreateObject("Microsoft.XMLHTTP")
+HttpReq.Open "GET", myURL, False, "", ""
+HttpReq.send
+
+myURL = HttpReq.responseBody
+If HttpReq.Status = 200 Then
+    Set oStrm = CreateObject("ADODB.Stream")
+    oStrm.Open
+    oStrm.Type = 1
+    oStrm.Write HttpReq.responseBody
+    oStrm.SaveToFile sellerDB, 2 ' 1 = no overwrite, 2 = overwrite
+    oStrm.Close
+End If
+
+With wk.ListObjects("DataSeller")
+    If Not .DataBodyRange Is Nothing Then
+        .DataBodyRange.Delete
+    End If
+End With
+
+Set owb = Workbooks.Open(sellerDB)
+owb.Activate
+
+Set wb = ActiveWorkbook.Worksheets(1)
+wb.ListObjects.Add(xlSrcRange, Range([A1].End(xlDown), [A1].End(xlToRight)), , xlYes).Name = "SourceDB"
+
+wb.ListObjects("SourceDB").DataBodyRange.Copy
+wk.Cells(2, 1).PasteSpecial xlPasteValues
+wk.ListObjects("DataSeller").ListColumns(21).DataBodyRange = Date
+
+owb.Close False
+Kill sellerDB
+
+ThisWorkbook.Save
+'wk.Range("A:T").Columns.AutoFit
+'wk.Range("T:T").ColumnWidth = 10
+
+'wk.Columns("D:D").NumberFormat = "dd-mm-yyyy"
+
+
+Application.ScreenUpdating = True
+Application.DisplayAlerts = True
+Application.EnableEvents = True
+Application.AskToUpdateLinks = True
+
+End Sub
